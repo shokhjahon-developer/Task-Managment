@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+enum Operation {
+  add
+  update
+  remove
+}
+
+enum Status {
+  toDo
+  inProgress
+  completed
+}
+
+model Todo {
+  id          String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String    @db.VarChar(128)
+  description String    @db.VarChar(512)
+  deadline    String    @db.VarChar()
+  priority    Priority  @default(low)
+  status      Status    @default(toDo)
+  categoryId  String    @db.Uuid
+  createdAt   DateTime  @default(now())
+  histories   History[]
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([id])
+  @@map("todos")
+}
+
+model User {
+  id        String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String    @db.VarChar(64)
+  email     String    @unique
+  password  String    @db.VarChar(64)
+  createdAt DateTime  @default(now())
+  histories History[]
+
+  @@id([id])
+  @@map("users")
+}
+
+model Category {
+  id        String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+  todos     Todo[]
+}
+
+model History {
+  id        String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  todoId    String    @db.Uuid
+  userId    String    @db.Uuid
+  operation Operation
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  todo Todo @relation(fields: [todoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([id])
+  @@map("history")
+}
